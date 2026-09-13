@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import type { Broker } from '../broker.js';
 import type { AudioMessage } from '../types.js';
 import { config } from '../config.js';
+import type { SpeakerTracker } from '../browser/speaker.js';
 
 /**
  * Przechwytuje dźwięk spotkania z monitora sinka PulseAudio (to, co "słyszy" Chromium)
@@ -10,7 +11,7 @@ import { config } from '../config.js';
 export class AudioCapture {
   private proc?: ChildProcess;
 
-  constructor(private broker: Broker) {}
+  constructor(private broker: Broker, private speakers?: SpeakerTracker) {}
 
   start(): void {
     const { sinkMeeting, inSampleRate, chunkMs } = config.audio;
@@ -35,6 +36,7 @@ export class AudioCapture {
           sampleRate: inSampleRate,
           channels: 1,
           data: slice.toString('base64'),
+          speaker: this.speakers?.current ?? undefined,
         });
       }
     });

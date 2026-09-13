@@ -13,6 +13,7 @@ const port = Number(process.env.PORT ?? 8080);
 mkdirSync('out', { recursive: true });
 writeFileSync('out/audio.pcm', '');
 let frame = 0;
+let lastSpeaker: string | undefined;
 
 const wss = new WebSocketServer({ port });
 wss.on('connection', (ws) => {
@@ -24,13 +25,14 @@ wss.on('connection', (ws) => {
     switch (msg.channel) {
       case 'audio':
         appendFileSync('out/audio.pcm', Buffer.from(msg.data, 'base64'));
+        if (msg.speaker && msg.speaker !== lastSpeaker) { lastSpeaker = msg.speaker; console.log(`[mock] mówi: ${msg.speaker}`); }
         if (process.env.ECHO === '1') {
           setTimeout(() => ws.send(JSON.stringify({ ...msg, channel: 'tts_audio' })), 2000);
         }
         break;
       case 'screen':
         writeFileSync(`out/screen-${++frame}.jpg`, Buffer.from(msg.data, 'base64'));
-        console.log(`[mock] klatka ${frame} (${msg.width}x${msg.height}, zmiana ${(msg.changeRatio * 100).toFixed(1)}%)`);
+        console.log(`[mock] klatka ${frame} [${msg.source}] (${msg.width}x${msg.height}, zmiana ${(msg.changeRatio * 100).toFixed(1)}%)`);
         break;
       case 'meeting':
         console.log(`[mock] meeting: ${msg.event} ${msg.detail ?? ''}`);

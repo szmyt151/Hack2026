@@ -25,6 +25,7 @@ export interface AudioMessage extends BaseMessage {
   sampleRate: number;
   channels: 1;
   data: string;        // base64 PCM
+  speaker?: string;    // tylko dla `audio`: nazwa aktywnego mówcy z DOM Teams (jeśli wykryta)
 }
 
 export interface ScreenMessage extends BaseMessage {
@@ -34,11 +35,12 @@ export interface ScreenMessage extends BaseMessage {
   height: number;
   data: string;        // base64 JPEG
   changeRatio: number; // 0..1 — ile pikseli zmieniło się vs poprzednia klatka
+  source: 'shared_screen' | 'full_page'; // czy udało się wyciąć obszar udostępnianego ekranu
 }
 
 export interface MeetingMessage extends BaseMessage {
   channel: 'meeting';
-  event: 'joining' | 'in_lobby' | 'joined' | 'left' | 'error';
+  event: 'joining' | 'in_lobby' | 'joined' | 'reconnecting' | 'left' | 'error';
   detail?: string;
 }
 

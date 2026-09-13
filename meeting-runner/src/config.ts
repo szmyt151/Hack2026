@@ -23,5 +23,9 @@ export const config = {
     intervalMs: Number(env('SCREEN_INTERVAL_MS', '3000')),
     diffThreshold: Number(env('SCREEN_DIFF_THRESHOLD', '0.02')),
   },
+  reconnect: {
+    maxAttempts: Number(env('RECONNECT_MAX_ATTEMPTS', '5')),
+    delayMs: Number(env('RECONNECT_DELAY_MS', '5000')),
+  },
   sessionId: `meeting-${Date.now()}`,
 };

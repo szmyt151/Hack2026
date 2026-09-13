@@ -49,6 +49,7 @@ Na hackathonie prościej odpalić Docker.
 - **Cisza w audio.pcm** — Chromium nie trafił w sink. Sprawdź `pactl list short sink-inputs`, przesuń: `pactl move-sink-input <id> meeting_out`.
 - **Teams nie słyszy asystenta** — w ustawieniach spotkania wybierz mikrofon "Monitor of assistant_mic".
 - **Sesja wylogowana** — powtórz `npm run login`.
+- **`speaker` zawsze pusty / `source` zawsze `full_page`** — selektory w `src/browser/dom.ts` nie trafiają. W DevTools na spotkaniu: `document.querySelectorAll('[data-tid]')` i dopisz właściwe.
 
 ## Fallback
 
@@ -58,6 +59,7 @@ Jeśli audio przez przeglądarkę zawiedzie, osoba B może czytać transkrypt z 
 ## TODO na hackathon
 
 - [ ] Sprawdzić selektory na aktualnym Teams (PL/EN)
-- [ ] Zamiast pełnego screenshotu wycinać tylko obszar udostępnianego ekranu (bounding box `[data-tid*="share"]`)
-- [ ] Wykrywanie, kto mówi (nazwa aktywnego mówcy z DOM → do `audio` jako `speaker`)
-- [ ] Reconnect do spotkania po rozłączeniu
+- [x] Wycinanie obszaru udostępnianego ekranu (`src/browser/dom.ts` → `findSharedScreenBox`; pole `source` w `screen`)
+- [x] Wykrywanie mówcy (`src/browser/speaker.ts`; pole `speaker` w `audio`)
+- [x] Reconnect po rozłączeniu (watchdog w `src/index.ts`: "Dołącz ponownie" → pełny rejoin → shutdown po N próbach)
+- [ ] Zweryfikować selektory w `src/browser/dom.ts` na żywym Teams — SHARE_SELECTORS i SPEAKER_SELECTORS to kandydaci
