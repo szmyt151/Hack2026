@@ -6,8 +6,15 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node"],
-    "outDir": "dist"
+    "types": [
+      "node"
+    ],
+    "outDir": "dist",
+    "rootDir": ".."
   },
-  "include": ["src", "scripts"]
+  "include": [
+    "src",
+    "scripts",
+    "../shared"
+  ]
 }

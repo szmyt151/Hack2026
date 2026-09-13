@@ -1,0 +1,12 @@
+{
+  "name": "hack2026",
+  "private": true,
+  "workspaces": ["meeting-runner", "voice-core", "brain"],
+  "scripts": {
+    "typecheck": "npm run typecheck -w meeting-runner -w voice-core -w brain",
+    "broker": "npm run mock-broker -w meeting-runner",
+    "runner": "npm start -w meeting-runner",
+    "voice": "npm start -w voice-core",
+    "brain": "npm start -w brain"
+  }
+}
