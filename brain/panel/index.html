@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Teams Assistant — panel</title>
+<style>
+  :root { --bg:#0f1115; --card:#181b22; --line:#2a2f3a; --fg:#e6e8ee; --muted:#8b93a7; --acc:#6ea8fe; --ok:#4ade80; --warn:#fbbf24; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui, sans-serif; }
+  header { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0; }
+  #status { font-size:12px; color:var(--muted); }
+  #status.live { color:var(--ok); }
+  main { display:grid; grid-template-columns: 1.3fr 1fr 1fr; gap:12px; padding:12px; height:calc(100vh - 50px); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; display:flex; flex-direction:column; min-height:0; }
+  .card h2 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0; padding:10px 12px; border-bottom:1px solid var(--line); }
+  .body { padding:10px 12px; overflow:auto; flex:1; }
+  .line { margin:0 0 6px; }
+  .line b { color:var(--acc); font-weight:600; }
+  .line.assistant b { color:var(--ok); }
+  .action { border-left:3px solid var(--warn); padding:6px 8px; margin:0 0 8px; background:#1f2330; border-radius:0 6px 6px 0; }
+  .action.done { border-color:var(--ok); }
+  .action small { color:var(--muted); display:block; }
+  ul { margin:4px 0 10px 18px; padding:0 } li { margin:2px 0 }
+  h3 { font-size:12px; color:var(--muted); margin:8px 0 2px; }
+  img { width:100%; border-radius:6px; border:1px solid var(--line); }
+  .col { display:flex; flex-direction:column; gap:12px; min-height:0; }
+  .col .card { flex:1; }
+</style>
+</head>
+<body>
+<header><h1>Teams Assistant</h1><span id="status">łączenie…</span></header>
+<main>
+  <section class="card"><h2>Transkrypt</h2><div class="body" id="transcript"></div></section>
+  <div class="col">
+    <section class="card"><h2>Notatki</h2><div class="body" id="notes"><i style="color:var(--muted)">Pierwsze notatki po ~60 s rozmowy.</i></div></section>
+    <section class="card"><h2>Ekran</h2><div class="body" id="screen"><i style="color:var(--muted)">Brak udostępnionego ekranu.</i></div></section>
+  </div>
+  <section class="card"><h2>Akcje asystenta</h2><div class="body" id="actions"></div></section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const tr = $('transcript'), notesEl = $('notes'), actionsEl = $('actions'), screenEl = $('screen'), status = $('status');
+const actions = new Map();
+let lastLine = null;
+
+function addTranscript(l) {
+  const who = l.role === 'assistant' ? 'Asystent' : (l.speaker || 'Uczestnik');
+  if (lastLine && lastLine.dataset.who === who && Date.now() - +lastLine.dataset.ts < 4000) {
+    lastLine.querySelector('span').textContent += l.text; lastLine.dataset.ts = Date.now(); 
+  } else {
+    lastLine = document.createElement('p'); lastLine.className = 'line ' + l.role; lastLine.dataset.who = who; lastLine.dataset.ts = Date.now();
+    lastLine.innerHTML = `<b>${esc(who)}:</b> <span>${esc(l.text)}</span>`; tr.appendChild(lastLine);
+  }
+  tr.scrollTop = tr.scrollHeight;
+}
+function renderNotes(n) {
+  const list = (a, f = (x) => esc(x)) => a && a.length ? `<ul>${a.map((x) => `<li>${f(x)}</li>`).join('')}</ul>` : '<ul><li style="color:var(--muted)">—</li></ul>';
+  notesEl.innerHTML = `<p>${esc(n.summary)}</p><h3>Decyzje</h3>${list(n.decisions)}<h3>Action items</h3>${list(n.actionItems, (a) => (a.owner ? `<b>${esc(a.owner)}:</b> ` : '') + esc(a.text))}<h3>Otwarte pytania</h3>${list(n.openQuestions)}`;
+}
+function renderAction(a) {
+  let el = actions.get(a.delegationId);
+  if (!el) { el = document.createElement('div'); el.className = 'action'; actions.set(a.delegationId, el); actionsEl.prepend(el); }
+  if (a.ok !== undefined || a.done) el.classList.add('done');
+  el.innerHTML = `<div>${esc((a.request || '').split('\n').slice(-2).join(' '))}</div>${a.result ? `<small>→ ${esc(a.result)}</small>` : '<small>… w toku</small>'}`;
+}
+function renderScreen(s) {
+  if (!s) return;
+  screenEl.innerHTML = (s.jpegBase64 ? `<img src="data:image/jpeg;base64,${s.jpegBase64}">` : '') + (s.description ? `<p>${esc(s.description)}</p>` : '');
+}
+
+function connect() {
+  const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+  ws.onopen = () => { status.textContent = 'połączono'; status.className = 'live'; };
+  ws.onclose = () => { status.textContent = 'rozłączono — ponawiam…'; status.className = ''; setTimeout(connect, 2000); };
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    if (d.type === 'snapshot') {
+      tr.innerHTML = ''; d.transcript.forEach(addTranscript);
+      if (d.notes.length) renderNotes(d.notes[d.notes.length - 1]);
+      d.actionLog.forEach(renderAction); renderScreen(d.screen);
+      return;
+    }
+    const m = d.message;
+    switch (m.channel) {
+      case 'transcript': addTranscript(m); break;
+      case 'notes': renderNotes(m); break;
+      case 'tool_call': renderAction({ delegationId: m.delegationId, request: m.request }); break;
+      case 'tool_result': if (m.done) renderAction({ delegationId: m.delegationId, request: actions.get(m.delegationId)?.textContent || '', result: m.content, done: true }); break;
+      case 'screen': renderScreen({ jpegBase64: m.data }); break;
+      case 'context': if (m.kind === 'screen') { const img = screenEl.querySelector('img'); screenEl.innerHTML = (img ? img.outerHTML : '') + `<p>${esc(m.content)}</p>`; } break;
+      case 'meeting': status.textContent = `spotkanie: ${m.event}`; break;
+    }
+  };
+}
+connect();
+</script>
+</body>
+</html>
