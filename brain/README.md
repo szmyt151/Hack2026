@@ -18,7 +18,7 @@ Kontrakt: `../shared/types.ts`.
 
 ```bash
 npm install
-cp .env.example .env            # OPENAI_API_KEY; AGENT_URL puste = mock agenta
+cp .env.example .env            # OPENAI_API_KEY + VIRTUOSO_API_URL/TOKEN (lub AGENT_URL / mock)
 cp user-profile.example.md user-profile.md   # uzupełnij
 (cd ../meeting-runner && npm run mock-broker) # terminal 1
 npm start                                     # terminal 2 -> panel na :3000
@@ -30,7 +30,20 @@ Test bez B i A: wyślij ręcznie `tool_call` do brokera (np. `wscat -c ws://loca
 ```
 W logu pojawi się `tool_result`, w panelu akcja.
 
-## Podpięcie Twojego agenta
+## Podpięcie Virtuoso (zalecane)
+
+Brain ma gotowy adapter do endpointu Virtuoso `POST /virtuoso/chat`. Dzięki temu delegacje ze spotkania korzystają z tej samej bazy wiedzy, MCP tools i polityki zatwierdzeń co chat Virtuoso.
+
+```env
+VIRTUOSO_API_URL=https://twoj-virtuoso.example.com
+VIRTUOSO_API_TOKEN=<IAM-lub-gateway-JWT>
+# opcjonalnie; ID z GET /virtuoso/chat/models
+VIRTUOSO_MODEL=
+```
+
+`VIRTUOSO_API_TOKEN` musi być JWT IAM albo gateway akceptowany przez schemat `mcp-iam-or-gateway`, identyfikujący provisioned użytkownika Virtuoso z podłączonym Slackiem. Endpointy OAuth w `src/api/auth` służą do podłączania integracji użytkownika i nie wydają tego tokenu. Adapter tworzy jedną trwałą rozmowę `hack2026-<sessionId>` na spotkanie, dołącza świeży screenshot (maks. 8 MB) i przekazuje transkrypt, opis ekranu oraz profil użytkownika jako kontekst spotkania.
+
+## Podpięcie innego agenta
 
 `src/agent/client.ts` → `HttpAgentClient`. Założony kontrakt: `POST $AGENT_URL {prompt, context} → {text, ok}`.
 `context` zawiera: `recentTranscript`, `screenDescription`, `screenJpegBase64` (jeśli ekran był świeży <2 min), `userProfile`, `sessionId`.

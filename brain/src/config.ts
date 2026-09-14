@@ -15,6 +15,15 @@ export const config = {
   agent: {
     url: process.env.AGENT_URL || null,
     apiKey: process.env.AGENT_API_KEY || null,
+    /**
+     * Virtuoso's public API base URL, e.g. https://virtuoso.example.com.
+     * When set, this takes precedence over the legacy generic AGENT_URL adapter.
+     */
+    virtuosoUrl: process.env.VIRTUOSO_API_URL || null,
+    /** A valid IAM or gateway JWT accepted by Virtuoso's mcp-iam-or-gateway scheme. */
+    virtuosoToken: process.env.VIRTUOSO_API_TOKEN || null,
+    /** Optional model ID registered by Virtuoso. */
+    virtuosoModel: process.env.VIRTUOSO_MODEL || undefined,
   },
   visionModel: env('VISION_MODEL', 'gpt-5.6-luna'),
   notesModel: env('NOTES_MODEL', 'gpt-5.6-luna'),
