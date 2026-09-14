@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 COPY . .
 
 # Profil usera montuj jako wolumen: -v $(pwd)/.chromium-profile:/app/.chromium-profile

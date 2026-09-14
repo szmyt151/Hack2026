@@ -34,3 +34,22 @@ npm run runner              # terminal 4 — dołącza do spotkania
 ```
 
 Każdy pakiet ma własny `.env` (patrz `.env.example`); `BROKER_URL` ten sam wszędzie.
+
+## Jeden kontenerowy start
+
+Repozytorium ma już jeden rootowy `package.json` z npm workspaces. Docker Compose buduje jeden wspólny obraz Node 22 i uruchamia z niego broker, brain oraz voice-core. Skopiuj konfigurację i wpisz klucze:
+
+```bash
+cp .env.example .env
+npm run docker:up
+```
+
+Panel demo będzie pod `http://localhost:3000`; broker pod `ws://localhost:8080`. `brain` używa `VIRTUOSO_API_URL` i `VIRTUOSO_API_TOKEN`, więc wszystkie delegacje trafiają do wiedzy i MCP tools Virtuoso.
+
+Prawdziwe dołączanie do Teams jest świadomie osobnym profilem, aby zwykły start nie otwierał spotkania:
+
+```bash
+npm run docker:meeting
+```
+
+Wypełnij wcześniej `MEETING_URL` w rootowym `.env`. Runner działa w Linuxowym Xvfb z PulseAudio. Jeśli spotkanie wymaga zalogowanego konta Teams, trzeba utworzyć sesję Chromium wewnątrz kontenera (albo dołączyć anonimowo); profil Chromium z macOS nie jest przenośny do Linuxowego kontenera.

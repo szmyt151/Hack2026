@@ -38,10 +38,19 @@ docker run --env-file .env -e BROKER_URL=ws://host.docker.internal:8080 \
 ```
 Zaloguj profil na hoście (`npm run login`), potem montuj go do kontenera.
 
-## macOS (dev bez Dockera)
+## macOS
 
-Zamiast PulseAudio: BlackHole 2ch + w `capture.ts`/`playback.ts` podmień `-f pulse` na `-f avfoundation`.
-Na hackathonie prościej odpalić Docker.
+Lokalny runner jest implementowany dla Linuxa: Chromium, `ffmpeg` i dwa wirtualne sinki PulseAudio. macOS używa CoreAudio i nie ma polecenia `pulseaudio`, więc `npm run audio:setup` na hoście tylko wyświetli właściwą komendę Docker i zakończy się sukcesem.
+
+Uruchamiaj audio w kontenerze — obraz instaluje PulseAudio i `ffmpeg`, a jego polecenie startowe samo uruchamia `audio:setup`:
+
+```bash
+docker build -t meeting-runner -f docker/Dockerfile .
+docker run --env-file .env -e BROKER_URL=ws://host.docker.internal:8080 \
+  -v "$(pwd)/.chromium-profile:/app/.chromium-profile" meeting-runner
+```
+
+Profil Chromium nadal logujesz na hoście przez `npm run login`.
 
 ## Co najczęściej się psuje
 

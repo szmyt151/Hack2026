@@ -7,6 +7,9 @@
     "broker": "npm run mock-broker -w meeting-runner",
     "runner": "npm start -w meeting-runner",
     "voice": "npm start -w voice-core",
-    "brain": "npm start -w brain"
+    "brain": "npm start -w brain",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up --build",
+    "docker:meeting": "docker compose --profile meeting up --build"
   }
 }

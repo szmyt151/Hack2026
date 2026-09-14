@@ -1,0 +1,50 @@
+name: hack2026
+
+x-common: &common
+  build:
+    context: .
+  env_file:
+    - ${HACK2026_ENV_FILE:-.env}
+  restart: unless-stopped
+
+services:
+  broker:
+    <<: *common
+    command: npm run broker
+    ports:
+      - "8080:8080"
+
+  brain:
+    <<: *common
+    command: npm run brain
+    depends_on:
+      - broker
+    environment:
+      BROKER_URL: ws://broker:8080
+    ports:
+      - "3000:3000"
+
+  voice:
+    <<: *common
+    command: npm run voice
+    depends_on:
+      - broker
+    environment:
+      BROKER_URL: ws://broker:8080
+
+  meeting-runner:
+    <<: *common
+    profiles: ["meeting"]
+    command: bash -c 'npm run audio:setup && npm run start:xvfb'
+    depends_on:
+      - broker
+      - brain
+      - voice
+    environment:
+      BROKER_URL: ws://broker:8080
+      USER_DATA_DIR: /app/.chromium-profile
+    volumes:
+      - meeting-profile:/app/.chromium-profile
+
+volumes:
+  meeting-profile:
